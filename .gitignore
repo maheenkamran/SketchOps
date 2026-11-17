@@ -1,19 +1,26 @@
+# Secrets
 .env
+
+# Python / tools
+.venv/
 __pycache__/
 *.pyc
-data/
+.pytest_cache/
+.DS_Store
+
+# Generated at runtime (not data we version)
+data/apps/
 mlruns/
 eval/results/
 last_screenshot.png
 .hf/
 sandbox/vendor/
-.venv/
 
 # D2 (Maheen) - kept out of git until D2 starts
 app/
 infra/
 ops/canary.py
 ops/langfuse/
-eval/gate.py
 ops/tracing.py
+eval/gate.py
 tests/test_d2.py
