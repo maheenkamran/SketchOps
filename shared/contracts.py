@@ -15,6 +15,7 @@ class BuildResult(TypedDict, total=False):
     rounds: int
     latency_s: float
     api_calls: int
+    tokens: int
     model_used: str
     fallback_used: bool
     stop_reason: str
