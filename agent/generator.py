@@ -1,38 +1,20 @@
 """Code generation: Gemini first, Groq Llama as fallback on any error / rate limit."""
 import base64
-import io
 import logging
 import os
 import re
 
 from shared import config
+from shared.images import mime as _mime
+from shared.images import shrink as _shrink
 
 log = logging.getLogger("generator")
-
-MAX_IMAGE_SIDE = 1600  # px; bigger photos are shrunk before sending (API size limits, fewer tokens)
 
 MOCK_HTML = """<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.5"></script></head>
 <body class="p-6 font-sans"><h1 class="text-2xl font-bold mb-4">Mock App</h1>
 <input class="border p-2 w-full mb-3" placeholder="Email"><button class="bg-blue-600 text-white px-4 py-2 rounded">Login</button>
 </body></html>"""
-
-
-def _mime(b: bytes) -> str:
-    return "image/png" if b[:8] == b"\x89PNG\r\n\x1a\n" else "image/jpeg"
-
-
-def _shrink(b: bytes) -> bytes:
-    """Downscale a large photo/screenshot so the request stays under the APIs' size limits."""
-    from PIL import Image
-
-    img = Image.open(io.BytesIO(b))
-    if max(img.size) <= MAX_IMAGE_SIDE and len(b) <= 3_000_000:
-        return b
-    img.thumbnail((MAX_IMAGE_SIDE, MAX_IMAGE_SIDE))
-    buf = io.BytesIO()
-    img.convert("RGB").save(buf, "JPEG", quality=90)
-    return buf.getvalue()
 
 
 def extract_html(text: str) -> str:
