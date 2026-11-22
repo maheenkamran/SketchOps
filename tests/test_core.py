@@ -39,6 +39,33 @@ def test_shrink_large_images_only():
     assert mime(big) == "image/jpeg" and mime(small) == "image/png"
 
 
+def test_model_rotation_on_quota(monkeypatch):
+    from agent import generator
+    from shared import config
+    monkeypatch.setattr(config, "MOCK_MODE", False)
+    monkeypatch.setattr(config, "GEMINI_MODELS", ["a", "b", "c"])
+    monkeypatch.setattr(generator, "_out_of_quota", set())
+    calls = []
+
+    def fake_gemini(text, images, model):
+        calls.append(model)
+        if model == "a":
+            raise RuntimeError("429 RESOURCE_EXHAUSTED ... GenerateRequestsPerDayPerProjectPerModel-FreeTier")
+        if model == "b":
+            raise RuntimeError("503 UNAVAILABLE: high demand")  # temporary -> try again next time
+        return "```html\n<html>ok</html>\n```", 10
+
+    monkeypatch.setattr(generator, "_gemini", fake_gemini)
+    r = generator.generate("p", _png(10, 10))
+    assert r["model_used"] == "c" and r["fallback_used"] and r["api_calls"] == 3
+    generator.generate("p", _png(10, 10))
+    assert calls == ["a", "b", "c", "b", "c"]  # "a" is out of quota for the day, "b" is retried
+
+    monkeypatch.setattr(generator, "_out_of_quota", {"a", "b", "c"})
+    with pytest.raises(RuntimeError, match="all Gemini models"):
+        generator.generate("p", _png(10, 10))  # Groq fallback is off by default
+
+
 # ---- prompts ----
 def test_prompts_and_unknown_version():
     from ops.prompts import get_prompt

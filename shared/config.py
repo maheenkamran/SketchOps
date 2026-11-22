@@ -28,8 +28,14 @@ BUILD_TIMEOUT_S = _f("BUILD_TIMEOUT_S", 180)    # per-build timeout
 
 # ---- models ----
 # Checked 22 Nov 2026: gemini-2.5-flash is closed to new keys and Groq removed Llama 4 Scout.
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
+# The free tier allows only 20 requests/day PER MODEL, so generation tries these in order and moves on
+# when one is out of quota or overloaded. The first one is the main model.
+GEMINI_MODELS = os.getenv("GEMINI_MODELS", "gemini-3.5-flash,gemini-3.7-flash,gemini-3.8-flash,"
+                                           "gemini-3.5-flash-lite,gemini-3.1-flash-lite").split(",")
+GEMINI_MODEL = GEMINI_MODELS[0]
 GROQ_VISION_MODEL = os.getenv("GROQ_VISION_MODEL", "qwen/qwen3.8-27b")  # only vision model left on Groq
+# Groq's free tier allows 1000 output tokens/min, too few for a whole page -> off for generation by default
+GROQ_FALLBACK = _b("GROQ_FALLBACK", "0")
 GROQ_JUDGE_MODEL = os.getenv("GROQ_JUDGE_MODEL", GROQ_VISION_MODEL)
 
 # ---- scorer ----

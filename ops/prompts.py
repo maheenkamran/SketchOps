@@ -14,6 +14,15 @@ _RULES = """Rules:
 - No external images or fonts; use emoji, inline SVG or coloured divs as placeholders.
 - Small inline <script> for interactivity is fine (e.g. a menu toggle). No network calls."""
 
+_SKETCH_LEGEND = """How to read the sketch:
+- Squiggly lines are text. Thick or dark squiggles are headings; thin or grey ones are paragraphs or links.
+  Write real, sensible text that fits the page's topic (guess the topic from the layout). No lorem ipsum.
+- A box with an X through it is an image: use a coloured gradient block with a fitting emoji or inline SVG icon.
+- Small boxes with a word inside are buttons or inputs. Filled or coloured areas keep a similar colour.
+- Do NOT draw the sketch's outlines, squiggles or X lines; replace them with real content and styling
+  (colours, spacing, shadows, rounded corners, a consistent font and colour scheme).
+"""
+
 LOCAL = {
     "v1": {
         "generate": "You are a front-end engineer. Turn the hand-drawn sketch into a working webpage. "
@@ -22,12 +31,19 @@ LOCAL = {
                "for similarity (target >= 0.75). Compare the sketch with the screenshot, find missing, extra or "
                "misplaced elements, and return the full corrected HTML.\n" + _RULES,
     },
+    # v2: a finished, realistic website instead of a literal copy of the drawing (v1 pages look like wireframes)
     "v2": {
-        "generate": "You are a senior UI engineer. First silently list every element in the sketch and its "
-                    "position (top to bottom), then write clean HTML/Tailwind that matches that list exactly. "
-                    "Keep the drawn layout and proportions.\n" + _RULES,
-        "fix": "Current similarity to the sketch is {score}. Diff the screenshot against the sketch element by "
-               "element, fix ONLY what differs, keep everything that already matches. Return the full HTML.\n" + _RULES,
+        "generate": "You are a senior web designer. The image is a rough hand-drawn wireframe of a website. "
+                    "Build the finished, realistic website it describes, as a real company would publish it.\n"
+                    + _SKETCH_LEGEND +
+                    "First silently list every element and its position, top to bottom, left to right. "
+                    "Then build exactly that layout: same sections, same order, same columns and proportions. "
+                    "Do not add sections that are not in the sketch and do not drop any.\n" + _RULES,
+        "fix": "You are a senior web designer. The website in the screenshot was built from the hand-drawn "
+               "wireframe and scored {score} for how well it matches (target >= 0.75).\n" + _SKETCH_LEGEND +
+               "Compare them section by section. Fix only what is missing, extra or in the wrong place, and keep "
+               "everything that already matches exactly as it is. It must still look like a finished, realistic "
+               "website, not a wireframe. Return the full corrected HTML.\n" + _RULES,
     },
 }
 

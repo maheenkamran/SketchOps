@@ -1,4 +1,5 @@
-"""Code generation: Gemini first, Groq Llama as fallback on any error / rate limit."""
+"""Code generation: tries the Gemini models in config.GEMINI_MODELS in order (free tier = 20 requests/day per model).
+Groq is an optional last resort (GROQ_FALLBACK=1); its free tier is too small for whole pages."""
 import base64
 import logging
 import os
@@ -23,13 +24,22 @@ def extract_html(text: str) -> str:
     return (m.group(1) if m else text or "").strip()
 
 
-def _gemini(text, images):
+_out_of_quota = set()  # Gemini models that hit their daily free-tier limit in this run
+
+
+def _is_daily_quota(e) -> bool:
+    """429 with a per-day quota (resets tomorrow). A per-minute 429 or a 503 'overloaded' is only temporary."""
+    s = str(e)
+    return "RESOURCE_EXHAUSTED" in s and "PerDay" in s
+
+
+def _gemini(text, images, model):
     from google import genai
     from google.genai import types
 
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
     contents = [text] + [types.Part.from_bytes(data=i, mime_type=_mime(i)) for i in images]
-    r = client.models.generate_content(model=config.GEMINI_MODEL, contents=contents)
+    r = client.models.generate_content(model=model, contents=contents)
     if not r.text:  # e.g. blocked by a safety filter -> treat as a failure so Groq takes over
         raise RuntimeError("Gemini returned no text")
     tokens = getattr(getattr(r, "usage_metadata", None), "total_token_count", 0) or 0
@@ -64,16 +74,22 @@ def generate(prompt: str, sketch: bytes, prev_html: str = None, screenshot: byte
         images.append(_shrink(screenshot))
         text += "\nImage 2 is a screenshot of the CURRENT code rendered.\n\nCURRENT CODE:\n" + prev_html
 
-    api_calls, fallback = 0, False
-    try:
-        api_calls += 1
-        out, tokens = _gemini(text, images)
-        model = config.GEMINI_MODEL
-    except Exception as e:  # rate limit, quota, network, bad key ...
-        log.warning("Gemini failed (%s) -> falling back to Groq", e)
-        fallback = True
+    api_calls, errors = 0, []
+    for model in [m for m in config.GEMINI_MODELS if m not in _out_of_quota]:
+        try:
+            api_calls += 1
+            out, tokens = _gemini(text, images, model)
+            break
+        except Exception as e:  # quota, overloaded, model not available, network ...
+            if _is_daily_quota(e):
+                _out_of_quota.add(model)  # don't try it again until the process restarts
+            log.warning("%s failed (%s) -> trying the next model", model, str(e)[:120])
+            errors.append(f"{model}: {str(e)[:80]}")
+    else:  # no Gemini model worked
+        if not config.GROQ_FALLBACK:
+            raise RuntimeError("all Gemini models failed or are out of quota: " + " | ".join(errors))
         api_calls += 1
         out, tokens = _groq(text, images)
         model = config.GROQ_VISION_MODEL
     return dict(html=extract_html(out), model_used=model, api_calls=api_calls,
-                fallback_used=fallback, tokens=tokens)
+                fallback_used=model != config.GEMINI_MODELS[0], tokens=tokens)
