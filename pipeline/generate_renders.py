@@ -78,6 +78,7 @@ def main():
                 break
             continue
         fails, done = 0, done + 1
+        write_index(out)  # after every sketch, so the labelling app sees new renders while this keeps running
         eta = (time.time() - t0) / i * (len(todo) - i) / 60
         models = ",".join(sorted({r["model_used"] for r in s["rounds"]}))
         print(f"[{i}/{len(todo)}] {sid}: {len(s['rounds'])} rounds, {models}, {s['total_s']}s  (~{eta:.0f} min left)")

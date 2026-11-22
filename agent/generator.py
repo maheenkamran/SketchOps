@@ -37,7 +37,9 @@ def _gemini(text, images, model):
     from google import genai
     from google.genai import types
 
-    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    # time limit per request (in ms): an overloaded model can otherwise hang forever; on timeout we try the next model
+    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"],
+                          http_options=types.HttpOptions(timeout=int(config.GEMINI_TIMEOUT_S * 1000)))
     contents = [text] + [types.Part.from_bytes(data=i, mime_type=_mime(i)) for i in images]
     r = client.models.generate_content(model=model, contents=contents)
     if not r.text:  # e.g. blocked by a safety filter -> treat as a failure so Groq takes over

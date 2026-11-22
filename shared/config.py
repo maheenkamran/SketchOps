@@ -33,6 +33,7 @@ BUILD_TIMEOUT_S = _f("BUILD_TIMEOUT_S", 180)    # per-build timeout
 GEMINI_MODELS = os.getenv("GEMINI_MODELS", "gemini-3.5-flash,gemini-3.7-flash,gemini-3.8-flash,"
                                            "gemini-3.5-flash-lite,gemini-3.1-flash-lite").split(",")
 GEMINI_MODEL = GEMINI_MODELS[0]
+GEMINI_TIMEOUT_S = _f("GEMINI_TIMEOUT_S", 150)  # one page normally takes 35-75 s
 GROQ_VISION_MODEL = os.getenv("GROQ_VISION_MODEL", "qwen/qwen3.8-27b")  # only vision model left on Groq
 # Groq's free tier allows 1000 output tokens/min, too few for a whole page -> off for generation by default
 GROQ_FALLBACK = _b("GROQ_FALLBACK", "0")
@@ -40,6 +41,8 @@ GROQ_JUDGE_MODEL = os.getenv("GROQ_JUDGE_MODEL", GROQ_VISION_MODEL)
 
 # ---- scorer ----
 CLIP_MODEL = os.getenv("CLIP_MODEL", "google/siglip-base-patch16-224")  # frozen feature extractor
+# exact model version on Hugging Face, so the features can't change if the model page is updated
+CLIP_REVISION = os.getenv("CLIP_REVISION", "7fd15f0689c79d79e38b1c2e2e2370a7bf2761ed")
 CLIP_LOW = _f("CLIP_LOW", 0.55)    # cosine mapped to 0.0  (calibrate on hand-made pages!)
 CLIP_HIGH = _f("CLIP_HIGH", 0.90)  # cosine mapped to 1.0
 CLIP_WEIGHT = _f("CLIP_WEIGHT", 0.6)  # final = w*clip + (1-w)*judge
