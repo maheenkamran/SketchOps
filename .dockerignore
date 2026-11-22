@@ -1,0 +1,35 @@
+# Keep the image small and free of secrets: data comes from DVC, results are recomputed.
+
+# secrets - never inside an image
+.env
+.dvc/config.local
+
+# local environments and caches
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+.hf/
+.dvc/cache/
+.dvc/tmp/
+
+# data and outputs (pulled by DVC or recomputed by dvc repro)
+data/raw/sketch2code/
+data/renders/
+data/renders_v2/
+data/apps/
+data/validated/
+data/split/
+data/pairs/
+data/features/
+mlruns/
+mlflow.db
+eval/results/
+docker_results/
+last_screenshot.png
+sandbox/vendor/
+
+# D2 (Maheen) - not part of this image
+app/
+infra/

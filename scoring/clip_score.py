@@ -16,8 +16,8 @@ def _load():
         # AutoImageProcessor (not AutoProcessor): we only need the image side, so no text tokenizer is required
         from transformers import AutoImageProcessor, AutoModel
 
-        _cache["proc"] = AutoImageProcessor.from_pretrained(config.CLIP_MODEL)
-        _cache["model"] = AutoModel.from_pretrained(config.CLIP_MODEL).eval()
+        _cache["proc"] = AutoImageProcessor.from_pretrained(config.CLIP_MODEL, revision=config.CLIP_REVISION)
+        _cache["model"] = AutoModel.from_pretrained(config.CLIP_MODEL, revision=config.CLIP_REVISION).eval()
     return _cache["proc"], _cache["model"]
 
 

@@ -25,3 +25,4 @@ ops/langfuse/
 ops/tracing.py
 eval/gate.py
 tests/test_d2.py
+docker_results/
