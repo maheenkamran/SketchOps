@@ -27,8 +27,9 @@ MIN_IMPROVEMENT = _f("MIN_IMPROVEMENT", 0.02)   # early stop if a round doesn't 
 BUILD_TIMEOUT_S = _f("BUILD_TIMEOUT_S", 180)    # per-build timeout
 
 # ---- models ----
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-GROQ_VISION_MODEL = os.getenv("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
+# Checked 22 Nov 2026: gemini-2.5-flash is closed to new keys and Groq removed Llama 4 Scout.
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
+GROQ_VISION_MODEL = os.getenv("GROQ_VISION_MODEL", "qwen/qwen3.8-27b")  # only vision model left on Groq
 GROQ_JUDGE_MODEL = os.getenv("GROQ_JUDGE_MODEL", GROQ_VISION_MODEL)
 
 # ---- scorer ----
