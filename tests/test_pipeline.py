@@ -154,3 +154,14 @@ def test_gate_blocks_model_worse_than_baseline(isolated_mlflow, monkeypatch):
     out = json.loads((isolated_mlflow / "evaluate.json").read_text())
     assert out["gate_passed"] is False and "registered_version" not in out
     assert evaluate.setup_mlflow("x").MlflowClient().search_registered_models() == []
+
+
+def test_human_label_overrides_claude_and_agreement_is_counted():
+    from pipeline.make_pairs import agreement, final_labels
+    lab = pd.DataFrame(dict(sketch_id=list("abcd"), round="1",
+                            claude_label=["1", "1", "0", "1"], human_label=["", "0", "0", "unsure"]))
+    f = final_labels(lab).set_index("sketch_id")
+    assert f.loc["a", "label"] == "1" and f.loc["a", "label_source"] == "claude"  # not checked -> Claude
+    assert f.loc["b", "label"] == "0" and f.loc["b", "label_source"] == "human"   # human overrides
+    assert "d" not in f.index                                                       # human unsure -> dropped
+    assert agreement(lab) == dict(n_checked=2, agreement=0.5)                       # b disagrees, c agrees
