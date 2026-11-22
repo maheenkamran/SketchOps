@@ -1,0 +1,12 @@
+# Settings for the dvc.yaml stages. Changing a value here re-runs only the stages that use it.
+split:
+  seed: 42
+  val: 0.15        # share of Sketch2Code webpages; our own photos always go to test
+  test: 0.15
+pairs:
+  seed: 42
+  mismatches_per_sketch: 1   # wrong-page screenshots per sketch (label 0)
+featurize:
+  side: 256        # images are shrunk to this width for SSIM / edge features
+  bins: 64         # length of the row and column edge profiles
+  grid: 16         # edge-density grid is grid x grid cells

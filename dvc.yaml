@@ -12,3 +12,45 @@ stages:
     metrics:
       - reports/validate.json:
           cache: false        # small file, kept in Git so the report shows in commits and on DagsHub
+
+  split:                      # by WEBPAGE, so no page is in two splits
+    cmd: python -m pipeline.split
+    deps:
+      - pipeline/split.py
+      - data/validated/manifest.csv
+    params:
+      - split
+    outs:
+      - data/split/webpages.csv
+    metrics:
+      - reports/split.json:
+          cache: false
+
+  pairs:
+    cmd: python -m pipeline.make_pairs
+    deps:
+      - pipeline/make_pairs.py
+      - data/validated/manifest.csv
+      - data/split/webpages.csv
+      # - data/renders          # add both once the renders are dvc-added and labelled
+      # - data/labels/render_labels.csv
+    params:
+      - pairs
+    outs:
+      - data/pairs/pairs.csv
+    metrics:
+      - reports/pairs.json:
+          cache: false
+
+  featurize:
+    cmd: python -m pipeline.featurize
+    deps:
+      - pipeline/featurize.py
+      - scoring/clip_score.py
+      - data/pairs/pairs.csv
+      - data/raw/sketch2code
+    params:
+      - featurize
+    outs:
+      - data/features/features.csv
+      - data/features/embeddings.npz

@@ -1,0 +1,26 @@
+{
+  "test/mismatch": {
+    "n": 28,
+    "pass_rate": 0.0
+  },
+  "test/reference": {
+    "n": 28,
+    "pass_rate": 1.0
+  },
+  "train/mismatch": {
+    "n": 123,
+    "pass_rate": 0.0
+  },
+  "train/reference": {
+    "n": 123,
+    "pass_rate": 1.0
+  },
+  "val/mismatch": {
+    "n": 22,
+    "pass_rate": 0.0
+  },
+  "val/reference": {
+    "n": 22,
+    "pass_rate": 1.0
+  }
+}

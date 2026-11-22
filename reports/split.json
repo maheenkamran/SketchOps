@@ -1,0 +1,14 @@
+{
+  "test": {
+    "webpages": 18,
+    "sketches": 28
+  },
+  "train": {
+    "webpages": 84,
+    "sketches": 123
+  },
+  "val": {
+    "webpages": 18,
+    "sketches": 22
+  }
+}
