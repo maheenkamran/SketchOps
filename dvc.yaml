@@ -1,0 +1,14 @@
+# The D1 pipeline. Run everything with:  dvc pull && dvc repro
+# DVC re-runs a stage only when one of its deps changed.
+stages:
+  validate:
+    cmd: python -m pipeline.validate
+    deps:
+      - pipeline/validate.py
+      - data/raw/sketch2code
+      # - data/raw/own        # add when our own photos are in
+    outs:
+      - data/validated/manifest.csv
+    metrics:
+      - reports/validate.json:
+          cache: false        # small file, kept in Git so the report shows in commits and on DagsHub

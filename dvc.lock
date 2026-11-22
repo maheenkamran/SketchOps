@@ -1,0 +1,23 @@
+schema: '2.0'
+stages:
+  validate:
+    cmd: python -m pipeline.validate
+    deps:
+    - path: data/raw/sketch2code
+      hash: md5
+      md5: ac4b593bb355049726f9a7c90936bbf8.dir
+      size: 30495896
+      nfiles: 415
+    - path: pipeline/validate.py
+      hash: md5
+      md5: 5c25e0c0562f1458b58c12fb09caa414
+      size: 5381
+    outs:
+    - path: data/validated/manifest.csv
+      hash: md5
+      md5: 86d5e3546a0d4cb275195a45a06d8162
+      size: 29025
+    - path: reports/validate.json
+      hash: md5
+      md5: cf0160c861adbe634e1f71041bc3e689
+      size: 136
