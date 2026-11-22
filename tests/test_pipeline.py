@@ -67,3 +67,32 @@ def test_transparent_png_is_read_as_white(tmp_path):
     Image.new("RGBA", (100, 100), (0, 0, 0, 0)).save(tmp_path / "t.png")
     g, _ = featurize.load_grey(tmp_path / "t.png", 64)
     assert g.min() == pytest.approx(1.0)
+
+
+# ---- metrics / baseline ----
+def test_threshold_tuning_does_not_pick_always_pass():
+    import numpy as np
+    from pipeline.metrics import classify, tune_threshold
+    y = np.array([0, 0, 0, 1, 1, 1])
+    score = np.array([0.1, 0.2, 0.3, 0.7, 0.8, 0.9])
+    t = tune_threshold(y, score)
+    assert 0.3 < t <= 0.7  # separates the classes; "everything passes" (t=0.1) would get F1 0.67 but is useless
+    m = classify(y, score, t)
+    assert m["balanced_accuracy"] == 1.0 and m["roc_auc"] == 1.0
+    assert classify(y, score, 0.0)["balanced_accuracy"] == 0.5  # always-pass = coin flip
+
+
+def test_baselines_log_to_mlflow(isolated_mlflow, monkeypatch):
+    import json
+    from pipeline import baseline
+    rows = [dict(split=s, kind="reference", label=l, siglip_sim=0.5 + 0.1 * l, ssim=0.4 + 0.2 * l)
+            for s in ("train", "val", "test") for l in (0, 1, 0, 1)]
+    pd.DataFrame(rows).to_csv(isolated_mlflow / "f.csv", index=False)
+    monkeypatch.setattr(baseline, "FEATURES", isolated_mlflow / "f.csv")
+    monkeypatch.setattr(baseline, "REPORT", isolated_mlflow / "b.json")
+    baseline.main()
+    r = json.loads((isolated_mlflow / "b.json").read_text())
+    assert set(r) == {"siglip_fixed", "siglip_tuned", "ssim_tuned"}
+    assert r["ssim_tuned"]["test"]["balanced_accuracy"] == 1.0
+    runs = baseline.setup_mlflow("sketchops-scorer").search_runs()
+    assert len(runs) == 3 and set(runs["tags.model_type"]) == {"baseline"}

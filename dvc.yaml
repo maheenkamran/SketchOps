@@ -54,3 +54,13 @@ stages:
     outs:
       - data/features/features.csv
       - data/features/embeddings.npz
+
+  baseline:                   # also logs one MLflow run per baseline (experiment "sketchops-scorer")
+    cmd: python -m pipeline.baseline
+    deps:
+      - pipeline/baseline.py
+      - pipeline/metrics.py
+      - data/features/features.csv
+    metrics:
+      - reports/baseline.json:
+          cache: false
