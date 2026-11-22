@@ -1,5 +1,11 @@
 """Shared settings. Everything can be overridden with environment variables / .env"""
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+ROOT = Path(__file__).resolve().parent.parent  # the repo folder
+load_dotenv(ROOT / ".env")  # read API keys and overrides from .env (real environment variables win)
 
 
 def _f(name, default):
@@ -39,6 +45,10 @@ VIEWPORT_H = _i("VIEWPORT_H", 800)
 
 # ---- prompts / canary ----
 STABLE_PROMPT_VERSION = os.getenv("STABLE_PROMPT_VERSION", "v1")
+
+# ---- experiment tracking ----
+# SQLite database, because the MLflow model registry needs a database (plain files are not enough)
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", f"sqlite:///{ROOT / 'mlflow.db'}")
 
 # ---- app ----
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000")

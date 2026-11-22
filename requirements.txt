@@ -8,6 +8,7 @@ playwright==1.49.0
 pillow==13.0.0
 requests==2.34.2
 pyyaml==6.0.3
+python-dotenv==1.2.4
 
 # scoring
 torch==2.15.0
