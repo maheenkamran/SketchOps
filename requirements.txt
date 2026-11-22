@@ -14,6 +14,14 @@ python-dotenv==1.2.4
 torch==2.15.0
 transformers==5.23.0
 
+# data + training (numpy/pandas/scipy/scikit-learn were already installed by the packages above; pinned here
+# because the pipeline imports them directly)
+numpy==2.4.6
+pandas==3.1.1
+scipy==1.17.1
+scikit-learn==1.9.1
+xgboost==3.2.0
+
 # mlops
 mlflow==3.18.0
 dvc==3.67.1

@@ -6,6 +6,19 @@ split:
 pairs:
   seed: 42
   mismatches_per_sketch: 1   # wrong-page screenshots per sketch (label 0)
+train:
+  seed: 42
+  models: [logreg, xgboost, mlp]
+  logreg:
+    C: 1.0               # smaller = simpler model
+  xgboost:
+    n_estimators: 200
+    max_depth: 3
+    learning_rate: 0.05
+    subsample: 0.8
+  mlp:                   # 2-layer neural network on SigLIP embeddings + the 6 features
+    hidden: 64
+    alpha: 0.01          # weight decay against overfitting (small dataset)
 featurize:
   side: 256        # images are shrunk to this width for SSIM / edge features
   bins: 64         # length of the row and column edge profiles

@@ -64,3 +64,16 @@ stages:
     metrics:
       - reports/baseline.json:
           cache: false
+
+  train:                      # one MLflow run per model, with the fitted model saved in the run
+    cmd: python -m pipeline.train
+    deps:
+      - pipeline/train.py
+      - pipeline/metrics.py
+      - data/features/features.csv
+      - data/features/embeddings.npz
+    params:
+      - train
+    metrics:
+      - reports/train.json:
+          cache: false

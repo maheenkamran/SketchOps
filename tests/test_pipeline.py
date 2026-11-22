@@ -96,3 +96,36 @@ def test_baselines_log_to_mlflow(isolated_mlflow, monkeypatch):
     assert r["ssim_tuned"]["test"]["balanced_accuracy"] == 1.0
     runs = baseline.setup_mlflow("sketchops-scorer").search_runs()
     assert len(runs) == 3 and set(runs["tags.model_type"]) == {"baseline"}
+
+
+# ---- train ----
+def test_train_fits_logs_and_reloads(isolated_mlflow, monkeypatch):
+    import json
+
+    import mlflow
+    import numpy as np
+    import yaml
+    from pipeline import train
+    from pipeline.featurize import FEATURES
+    rng = np.random.default_rng(0)
+    n = 60
+    label = np.tile([0, 1], n // 2)
+    df = pd.DataFrame({f: rng.normal(size=n) + label for f in FEATURES})  # features carry the label
+    df = df.assign(pair_id=[f"p{i}" for i in range(n)], kind="reference", label=label,
+                   split=np.repeat(["train", "val", "test"], [36, 12, 12]))
+    d = isolated_mlflow / "features"
+    d.mkdir()
+    df.to_csv(d / "features.csv", index=False)
+    np.savez(d / "embeddings.npz", pair_id=df["pair_id"].to_numpy(),
+             sketch=rng.normal(size=(n, 8)), render=rng.normal(size=(n, 8)))
+    params = yaml.safe_load(open("params.yaml"))
+    params["train"]["models"] = ["logreg", "mlp"]  # xgboost is covered when installed (same code path)
+    (isolated_mlflow / "params.yaml").write_text(yaml.safe_dump(params))
+    monkeypatch.setattr(train, "DATA", d)
+    monkeypatch.setattr(train, "REPORT", isolated_mlflow / "train.json")
+    train.main()
+    r = json.loads((isolated_mlflow / "train.json").read_text())
+    assert r["logreg"]["test"]["balanced_accuracy"] > 0.7  # learns the obvious signal
+    assert r["mlp"]["uses_embeddings"] and not r["logreg"]["uses_embeddings"]
+    m = mlflow.sklearn.load_model(f"runs:/{r['mlp']['run_id']}/model")
+    assert m.predict_proba(np.zeros((1, len(FEATURES) + 16))).shape == (1, 2)

@@ -131,3 +131,45 @@ stages:
       hash: md5
       md5: 55561a24ebbb4d0316cb79e6cff9721d
       size: 2408
+  train:
+    cmd: python -m pipeline.train
+    deps:
+    - path: data/features/embeddings.npz
+      hash: md5
+      md5: d58806623e8c0ad8c5e71af4d672c5d2
+      size: 1297154
+    - path: data/features/features.csv
+      hash: md5
+      md5: fb67d7b0592a5e251a230f39a0bebf51
+      size: 93554
+    - path: pipeline/metrics.py
+      hash: md5
+      md5: 0036123d557f8818cbcd5181ce2ad648
+      size: 2356
+    - path: pipeline/train.py
+      hash: md5
+      md5: 1909f2ea2415224f94bd983bcf6c0113
+      size: 5602
+    params:
+      params.yaml:
+        train:
+          seed: 42
+          models:
+          - logreg
+          - xgboost
+          - mlp
+          logreg:
+            C: 1.0
+          xgboost:
+            n_estimators: 200
+            max_depth: 3
+            learning_rate: 0.05
+            subsample: 0.8
+          mlp:
+            hidden: 64
+            alpha: 0.01
+    outs:
+    - path: reports/train.json
+      hash: md5
+      md5: 959ae2506f86bec18125458201380c51
+      size: 3242
