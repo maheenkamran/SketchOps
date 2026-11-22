@@ -129,3 +129,28 @@ def test_train_fits_logs_and_reloads(isolated_mlflow, monkeypatch):
     assert r["mlp"]["uses_embeddings"] and not r["logreg"]["uses_embeddings"]
     m = mlflow.sklearn.load_model(f"runs:/{r['mlp']['run_id']}/model")
     assert m.predict_proba(np.zeros((1, len(FEATURES) + 16))).shape == (1, 2)
+
+
+# ---- evaluate ----
+def _res(val_bal, val_auc=0.5):
+    m = dict(balanced_accuracy=val_bal, roc_auc=val_auc, accuracy=val_bal)
+    return dict(threshold=0.5, val=m, test=m, model_uri="models:/x", run_id="r", uses_embeddings=False)
+
+
+def test_champion_is_chosen_on_val_not_test():
+    from pipeline.evaluate import pick_champion
+    trained = {"a": _res(0.80), "b": _res(0.90), "c": _res(0.90, val_auc=0.95)}
+    trained["a"]["test"] = dict(balanced_accuracy=0.99, roc_auc=0.99, accuracy=0.99)  # best on test, ignored
+    assert pick_champion(trained) == "c"  # tie on val accuracy -> higher val ROC-AUC
+
+
+def test_gate_blocks_model_worse_than_baseline(isolated_mlflow, monkeypatch):
+    import json
+    from pipeline import evaluate
+    (isolated_mlflow / "train.json").write_text(json.dumps({"logreg": _res(0.60)}))
+    (isolated_mlflow / "baseline.json").write_text(json.dumps({"ssim_tuned": _res(0.70)}))
+    monkeypatch.setattr(evaluate, "REPORTS", isolated_mlflow)
+    evaluate.main()
+    out = json.loads((isolated_mlflow / "evaluate.json").read_text())
+    assert out["gate_passed"] is False and "registered_version" not in out
+    assert evaluate.setup_mlflow("x").MlflowClient().search_registered_models() == []

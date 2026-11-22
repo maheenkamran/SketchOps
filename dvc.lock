@@ -148,8 +148,8 @@ stages:
       size: 2356
     - path: pipeline/train.py
       hash: md5
-      md5: 1909f2ea2415224f94bd983bcf6c0113
-      size: 5602
+      md5: 831fd5b0c3ea383eb1093bc2924bc27a
+      size: 5671
     params:
       params.yaml:
         train:
@@ -171,5 +171,33 @@ stages:
     outs:
     - path: reports/train.json
       hash: md5
-      md5: 959ae2506f86bec18125458201380c51
-      size: 3242
+      md5: 7fa0b9a0c2e7828d0aa0609f94840d95
+      size: 3431
+  evaluate:
+    cmd: python -m pipeline.evaluate
+    deps:
+    - path: data/features/embeddings.npz
+      hash: md5
+      md5: d58806623e8c0ad8c5e71af4d672c5d2
+      size: 1297154
+    - path: data/features/features.csv
+      hash: md5
+      md5: fb67d7b0592a5e251a230f39a0bebf51
+      size: 93554
+    - path: pipeline/evaluate.py
+      hash: md5
+      md5: 75a1306929378e4e26bd562272d705e9
+      size: 5921
+    - path: reports/baseline.json
+      hash: md5
+      md5: 55561a24ebbb4d0316cb79e6cff9721d
+      size: 2408
+    - path: reports/train.json
+      hash: md5
+      md5: 7fa0b9a0c2e7828d0aa0609f94840d95
+      size: 3431
+    outs:
+    - path: reports/evaluate.json
+      hash: md5
+      md5: 39edbf613c5b337d7f2bfdbc32cd44e0
+      size: 688

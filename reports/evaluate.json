@@ -1,0 +1,34 @@
+{
+  "champion": "logreg",
+  "gate_passed": true,
+  "gain_over_baseline": 0.3637,
+  "best_baseline": "siglip_tuned",
+  "champion_val": {
+    "accuracy": 0.9773,
+    "balanced_accuracy": 0.9773,
+    "precision": 1.0,
+    "recall": 0.9545,
+    "f1": 0.9767,
+    "n": 44.0,
+    "roc_auc": 0.9959
+  },
+  "champion_test": {
+    "accuracy": 0.8393,
+    "balanced_accuracy": 0.8393,
+    "precision": 0.913,
+    "recall": 0.75,
+    "f1": 0.8235,
+    "n": 56.0,
+    "roc_auc": 0.9732
+  },
+  "registered_version": 1,
+  "reloaded_test": {
+    "accuracy": 0.8393,
+    "balanced_accuracy": 0.8393,
+    "precision": 0.913,
+    "recall": 0.75,
+    "f1": 0.8235,
+    "n": 56.0,
+    "roc_auc": 0.9732
+  }
+}

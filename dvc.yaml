@@ -77,3 +77,15 @@ stages:
     metrics:
       - reports/train.json:
           cache: false
+
+  evaluate:                   # picks the champion on val, gates it against the baselines, registers it in MLflow
+    cmd: python -m pipeline.evaluate
+    deps:
+      - pipeline/evaluate.py
+      - reports/train.json
+      - reports/baseline.json
+      - data/features/features.csv     # used to re-check the registered model
+      - data/features/embeddings.npz
+    metrics:
+      - reports/evaluate.json:
+          cache: false

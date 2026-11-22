@@ -65,14 +65,13 @@ def make_model(name, p, seed):
 
 
 def log_model(mlflow, name, model, example):
-    """Save the fitted model inside the MLflow run (so it can be registered and loaded later)."""
+    """Save the fitted model inside the MLflow run; returns its address (models:/m-...) for registering later."""
     if name == "xgboost":
-        mlflow.xgboost.log_model(model, name="model", input_example=example)  # XGBoost's own file format
-    else:
-        # MLflow saves scikit-learn models with skops, which only loads classes it trusts; the MLP's
-        # optimizer is a normal scikit-learn class, so we list it as trusted.
-        mlflow.sklearn.log_model(model, name="model", input_example=example, skops_trusted_types=[
-            "sklearn.neural_network._stochastic_optimizers.AdamOptimizer"])
+        return mlflow.xgboost.log_model(model, name="model", input_example=example).model_uri  # XGBoost's own format
+    # MLflow saves scikit-learn models with skops, which only loads classes it trusts; the MLP's
+    # optimizer is a normal scikit-learn class, so we list it as trusted.
+    return mlflow.sklearn.log_model(model, name="model", input_example=example, skops_trusted_types=[
+        "sklearn.neural_network._stochastic_optimizers.AdamOptimizer"]).model_uri
 
 
 def main():
@@ -99,8 +98,9 @@ def main():
                                    n_inputs=X.shape[1], n_train=int(is_train.sum()), seed=params["seed"],
                                    features_md5=file_md5(DATA / "features.csv"), **p))
             mlflow.log_metrics(flat(m))
-            log_model(mlflow, name, model, X[is_train][:2])
-        results[name] = dict(run_id=run.info.run_id, threshold=round(thr, 4), uses_embeddings=with_emb, **m)
+            uri = log_model(mlflow, name, model, X[is_train][:2])
+        results[name] = dict(run_id=run.info.run_id, model_uri=uri, threshold=round(thr, 4),
+                             uses_embeddings=with_emb, **m)
         t, v = m["test"], m["val"]
         print(f"{name:8s} val bal_acc={v['balanced_accuracy']:.3f} auc={v['roc_auc']:.3f} | "
               f"test bal_acc={t['balanced_accuracy']:.3f} auc={t['roc_auc']:.3f} | "
