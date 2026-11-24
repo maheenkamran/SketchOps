@@ -29,6 +29,8 @@ stages:
       - pipeline/make_pairs.py
       - data/validated/manifest.csv
       - data/split/webpages.csv
+      - data/renders/renders.csv
+      - data/labels/render_labels.csv
     params:
       - pairs
     outs:
@@ -44,6 +46,7 @@ stages:
       - scoring/clip_score.py
       - data/pairs/pairs.csv
       - data/raw/sketch2code
+      - data/renders
     params:
       - featurize
     outs:

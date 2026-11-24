@@ -50,6 +50,14 @@ stages:
   pairs:
     cmd: python -m pipeline.make_pairs
     deps:
+    - path: data/labels/render_labels.csv
+      hash: md5
+      md5: 9e3aa32f6c23f849b4eaf6157c0df533
+      size: 30124
+    - path: data/renders/renders.csv
+      hash: md5
+      md5: aea56eaf3d360f9c50043862a9c32f99
+      size: 39596
     - path: data/split/webpages.csv
       hash: md5
       md5: bb6232faff2fd3dcb896e783a20c3593
@@ -60,8 +68,8 @@ stages:
       size: 29025
     - path: pipeline/make_pairs.py
       hash: md5
-      md5: 992e871f3a4559665e523ba2ea6aa443
-      size: 3634
+      md5: 1949c9a945c5fb36b2615d2f19cae960
+      size: 4629
     params:
       params.yaml:
         pairs:
@@ -70,32 +78,37 @@ stages:
     outs:
     - path: data/pairs/pairs.csv
       hash: md5
-      md5: e82ede1680d172b88b8d5c6f4827a495
-      size: 52679
+      md5: 96b21e42ad7fc271ef471f34f932b217
+      size: 103296
     - path: reports/pairs.json
       hash: md5
-      md5: 99441a78ec9861cc2173b653a766312d
-      size: 367
+      md5: 0d060fedf51a10a53cc4f76f728045fe
+      size: 615
   featurize:
     cmd: python -m pipeline.featurize
     deps:
     - path: data/pairs/pairs.csv
       hash: md5
-      md5: e82ede1680d172b88b8d5c6f4827a495
-      size: 52679
+      md5: 96b21e42ad7fc271ef471f34f932b217
+      size: 103296
     - path: data/raw/sketch2code
       hash: md5
       md5: ac4b593bb355049726f9a7c90936bbf8.dir
       size: 30495896
       nfiles: 415
+    - path: data/renders
+      hash: md5
+      md5: 15f64c3936e0ea278a0571b73b9e713b.dir
+      size: 16519988
+      nfiles: 860
     - path: pipeline/featurize.py
       hash: md5
       md5: f07d55ea8c7f59f83ac1f9235469f452
       size: 5406
     - path: scoring/clip_score.py
       hash: md5
-      md5: da3df030e9292e41c5a27a884a303eda
-      size: 2024
+      md5: 9e4ca796821055adf9477e55b0e1d30f
+      size: 2086
     params:
       params.yaml:
         featurize:
@@ -105,19 +118,19 @@ stages:
     outs:
     - path: data/features/embeddings.npz
       hash: md5
-      md5: d58806623e8c0ad8c5e71af4d672c5d2
-      size: 1297154
+      md5: ac4e52cbb3a6fe162d522828126cb6e7
+      size: 2775297
     - path: data/features/features.csv
       hash: md5
-      md5: fb67d7b0592a5e251a230f39a0bebf51
-      size: 93554
+      md5: 8738c32ea8dd726221168a7495ec8728
+      size: 184250
   baseline:
     cmd: python -m pipeline.baseline
     deps:
     - path: data/features/features.csv
       hash: md5
-      md5: fb67d7b0592a5e251a230f39a0bebf51
-      size: 93554
+      md5: 8738c32ea8dd726221168a7495ec8728
+      size: 184250
     - path: pipeline/baseline.py
       hash: md5
       md5: 4811472a49448721bdb49b74bc23b387
@@ -129,19 +142,19 @@ stages:
     outs:
     - path: reports/baseline.json
       hash: md5
-      md5: 55561a24ebbb4d0316cb79e6cff9721d
-      size: 2408
+      md5: 3ee166952d0f90d7444e21d32852d1d1
+      size: 3033
   train:
     cmd: python -m pipeline.train
     deps:
     - path: data/features/embeddings.npz
       hash: md5
-      md5: d58806623e8c0ad8c5e71af4d672c5d2
-      size: 1297154
+      md5: ac4e52cbb3a6fe162d522828126cb6e7
+      size: 2775297
     - path: data/features/features.csv
       hash: md5
-      md5: fb67d7b0592a5e251a230f39a0bebf51
-      size: 93554
+      md5: 8738c32ea8dd726221168a7495ec8728
+      size: 184250
     - path: pipeline/metrics.py
       hash: md5
       md5: 0036123d557f8818cbcd5181ce2ad648
@@ -171,33 +184,33 @@ stages:
     outs:
     - path: reports/train.json
       hash: md5
-      md5: 7fa0b9a0c2e7828d0aa0609f94840d95
-      size: 3431
+      md5: 41e055aec7a4693478b4155c572376e9
+      size: 4048
   evaluate:
     cmd: python -m pipeline.evaluate
     deps:
     - path: data/features/embeddings.npz
       hash: md5
-      md5: d58806623e8c0ad8c5e71af4d672c5d2
-      size: 1297154
+      md5: ac4e52cbb3a6fe162d522828126cb6e7
+      size: 2775297
     - path: data/features/features.csv
       hash: md5
-      md5: fb67d7b0592a5e251a230f39a0bebf51
-      size: 93554
+      md5: 8738c32ea8dd726221168a7495ec8728
+      size: 184250
     - path: pipeline/evaluate.py
       hash: md5
       md5: 75a1306929378e4e26bd562272d705e9
       size: 5921
     - path: reports/baseline.json
       hash: md5
-      md5: 55561a24ebbb4d0316cb79e6cff9721d
-      size: 2408
+      md5: 3ee166952d0f90d7444e21d32852d1d1
+      size: 3033
     - path: reports/train.json
       hash: md5
-      md5: 7fa0b9a0c2e7828d0aa0609f94840d95
-      size: 3431
+      md5: 41e055aec7a4693478b4155c572376e9
+      size: 4048
     outs:
     - path: reports/evaluate.json
       hash: md5
-      md5: 39edbf613c5b337d7f2bfdbc32cd44e0
-      size: 688
+      md5: c20d863a1ef765bc6503456d8cf4daf3
+      size: 692

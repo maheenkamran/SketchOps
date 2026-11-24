@@ -1,4 +1,8 @@
 {
+  "test/agent": {
+    "n": 56,
+    "pass_rate": 0.911
+  },
   "test/mismatch": {
     "n": 28,
     "pass_rate": 0.0
@@ -6,6 +10,10 @@
   "test/reference": {
     "n": 28,
     "pass_rate": 1.0
+  },
+  "train/agent": {
+    "n": 243,
+    "pass_rate": 0.955
   },
   "train/mismatch": {
     "n": 123,
@@ -15,6 +23,10 @@
     "n": 123,
     "pass_rate": 1.0
   },
+  "val/agent": {
+    "n": 44,
+    "pass_rate": 0.841
+  },
   "val/mismatch": {
     "n": 22,
     "pass_rate": 0.0
@@ -22,5 +34,9 @@
   "val/reference": {
     "n": 22,
     "pass_rate": 1.0
+  },
+  "render_labels": {
+    "n_checked": 63,
+    "agreement": 0.952
   }
 }
