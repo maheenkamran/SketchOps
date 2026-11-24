@@ -1,7 +1,7 @@
 {
   "logreg": {
-    "run_id": "074a9517e5314c59872e5cc635a46b52",
-    "model_uri": "models:/m-29b8b90391f94eacbb682e6e0d9fd0b1",
+    "run_id": "1f7ca102f49141bb8dec608385615695",
+    "model_uri": "models:/m-30de2cfa1e35468d97e187fd1c3ee6b7",
     "threshold": 0.497,
     "uses_embeddings": false,
     "test": {
@@ -60,8 +60,8 @@
     }
   },
   "xgboost": {
-    "run_id": "95fda46b61cb462891e69b19bb845b31",
-    "model_uri": "models:/m-9c3ed372c50a415ca0fa33b41e312116",
+    "run_id": "b15f4175b47a4a398df45e30e3dfc33e",
+    "model_uri": "models:/m-1a7ca8708f3b4545aab439e40dbb692e",
     "threshold": 0.6636,
     "uses_embeddings": false,
     "test": {
@@ -120,8 +120,8 @@
     }
   },
   "mlp": {
-    "run_id": "3419267d89a647cf87f1c9512dd11c57",
-    "model_uri": "models:/m-4463d6ad6259491fa5334381b3d07aa4",
+    "run_id": "94a009f5159e4d0c84b287975c892866",
+    "model_uri": "models:/m-95a31fc32a3c4445a39c582d3c0d03d1",
     "threshold": 0.6054,
     "uses_embeddings": true,
     "test": {

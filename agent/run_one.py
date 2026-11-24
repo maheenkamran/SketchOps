@@ -30,7 +30,7 @@ def run_and_save(sketch_path: Path, out: Path, version: str = None) -> dict:
             (out / png).write_bytes(h["screenshot"])
         rounds.append(dict(round=n, png=png, html=f"round_{n}.html", model_used=h["model_used"],
                            agent_score=h["score"], latency_s=round(h["latency_s"], 1)))
-    summary = dict(prompt_version=version, real_scorer=config.USE_REAL_SCORER, rounds=rounds,
+    summary = dict(prompt_version=version, scorer=config.SCORER, rounds=rounds,
                    stop_reason=st.get("stop_reason"), api_calls=st.get("api_calls"), tokens=st.get("tokens"),
                    fallback_used=st.get("fallback_used"), total_s=round(time.time() - t0, 1))
     (out / "summary.json").write_text(json.dumps(summary, indent=2))

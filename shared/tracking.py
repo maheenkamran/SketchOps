@@ -10,8 +10,12 @@ def setup_mlflow(experiment: str):
 
     mlflow.set_tracking_uri(config.MLFLOW_TRACKING_URI)
     if mlflow.get_experiment_by_name(experiment) is None:
-        # keep artifacts in <repo>/mlruns no matter which folder the script is started from
-        mlflow.create_experiment(experiment, artifact_location=(config.ROOT / "mlruns").as_uri())
+        if config.MLFLOW_TRACKING_URI.startswith("sqlite"):
+            # local: keep artifacts in <repo>/mlruns no matter which folder the script is started from
+            mlflow.create_experiment(experiment, artifact_location=(config.ROOT / "mlruns").as_uri())
+        else:
+            # remote server (e.g. DagsHub): the server decides where artifacts are stored
+            mlflow.create_experiment(experiment)
     mlflow.set_experiment(experiment)
     return mlflow
 

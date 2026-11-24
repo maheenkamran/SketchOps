@@ -46,7 +46,9 @@ CLIP_REVISION = os.getenv("CLIP_REVISION", "7fd15f0689c79d79e38b1c2e2e2370a7bf27
 CLIP_LOW = _f("CLIP_LOW", 0.55)    # cosine mapped to 0.0  (calibrate on hand-made pages!)
 CLIP_HIGH = _f("CLIP_HIGH", 0.90)  # cosine mapped to 1.0
 CLIP_WEIGHT = _f("CLIP_WEIGHT", 0.6)  # final = w*clip + (1-w)*judge
-USE_REAL_SCORER = _b("USE_REAL_SCORER", "0")  # 0 = placeholder scorer, 1 = scoring/score.py
+# Which critic the agent uses: "trained" = the registered champion (scoring/trained_score.py),
+# "handtuned" = fixed SigLIP + LLM-judge mix (scoring/score.py), "placeholder" = always 0.5 (wiring tests).
+SCORER = os.getenv("SCORER", "trained")
 
 # ---- sandbox / rendering ----
 SANDBOX_URL = os.getenv("SANDBOX_URL", "")  # empty = render with local Playwright
@@ -58,7 +60,7 @@ STABLE_PROMPT_VERSION = os.getenv("STABLE_PROMPT_VERSION", "v1")
 
 # ---- experiment tracking ----
 # SQLite database, because the MLflow model registry needs a database (plain files are not enough)
-MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", f"sqlite:///{ROOT / 'mlflow.db'}")
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI") or f"sqlite:///{ROOT / 'mlflow.db'}"  # empty -> local
 
 # ---- app ----
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000")

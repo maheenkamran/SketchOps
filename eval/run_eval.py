@@ -62,7 +62,7 @@ def run(mode: str, prompt_version: str, limit: int = None) -> dict:
     out = dict(prompt_version=prompt_version, mode=mode, metrics=metrics, rows=rows,
                settings=dict(threshold=config.SCORE_THRESHOLD, max_rounds=config.MAX_ROUNDS,
                              min_improvement=config.MIN_IMPROVEMENT, gemini=config.GEMINI_MODEL,
-                             real_scorer=config.USE_REAL_SCORER,
+                             scorer=config.SCORER,
                              viewport=f"{config.VIEWPORT_W}x{config.VIEWPORT_H}"))
     RESULTS.mkdir(exist_ok=True)
     json.dump(out, open(RESULTS / "latest.json", "w"), indent=2)

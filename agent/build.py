@@ -8,10 +8,14 @@ from shared import config
 
 
 def _score_fn():
-    if config.USE_REAL_SCORER:
-        from scoring.score import score
-    else:
+    if config.MOCK_MODE or config.SCORER == "placeholder":
         from agent.placeholder_score import score
+    elif config.SCORER == "handtuned":
+        from scoring.score import score
+    elif config.SCORER == "trained":
+        from scoring.trained_score import score
+    else:
+        raise ValueError(f"unknown SCORER {config.SCORER!r}; use trained, handtuned or placeholder")
     return score
 
 

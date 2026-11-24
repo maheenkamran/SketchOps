@@ -115,3 +115,26 @@ def test_bad_prompt_scores_lower(isolated_mlflow):
     good = run("fake", "v1", limit=20)["metrics"]["success_rate"]
     bad = run("fake", "v2-bad", limit=20)["metrics"]["success_rate"]
     assert bad < good
+
+
+# ---- trained scorer wiring ----
+def test_scorer_setting_picks_the_right_critic(monkeypatch):
+    from agent import build
+    from shared import config
+    monkeypatch.setattr(config, "MOCK_MODE", False)
+    for name, module in (("placeholder", "agent.placeholder_score"), ("handtuned", "scoring.score"),
+                         ("trained", "scoring.trained_score")):
+        monkeypatch.setattr(config, "SCORER", name)
+        assert build._score_fn().__module__ == module
+    monkeypatch.setattr(config, "SCORER", "nonsense")
+    with pytest.raises(ValueError):
+        build._score_fn()
+    monkeypatch.setattr(config, "MOCK_MODE", True)  # mock mode never needs a model
+    assert build._score_fn().__module__ == "agent.placeholder_score"
+
+
+def test_model_threshold_maps_onto_agent_threshold():
+    from scoring.trained_score import to_agent_scale
+    assert to_agent_scale(0.66, 0.66, 0.75) == pytest.approx(0.75)  # model's pass line = agent's pass line
+    assert to_agent_scale(0.0, 0.66, 0.75) == 0.0 and to_agent_scale(1.0, 0.66, 0.75) == pytest.approx(1.0)
+    assert to_agent_scale(0.65, 0.66, 0.75) < 0.75 <= to_agent_scale(0.67, 0.66, 0.75)
