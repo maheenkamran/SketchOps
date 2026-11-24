@@ -27,7 +27,10 @@ NAMES = {"1": "PASS", "0": "FAIL", "unsure": "UNSURE"}
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--labels", default=str(DATA / "labels" / "render_labels.csv"))
-LABELS = Path(ap.parse_args(sys.argv[1:]).labels)
+ap.add_argument("--fail-check", type=int, default=0,
+                help="check N renders Claude marked FAIL, mixed with N it marked PASS (so you still can't guess)")
+ARGS = ap.parse_args(sys.argv[1:])
+LABELS = Path(ARGS.labels)
 
 
 def load_renders():
@@ -65,9 +68,22 @@ renders = load_renders()
 lab = load_labels().set_index(["sketch_id", "round"])
 get = lambda r, col: lab[col].get((r["sketch_id"], r["round"]), "")  # noqa: E731
 todo = [i for i, r in renders.iterrows() if not get(r, "human_label")]
+if ARGS.fail_check:  # only unchecked Claude-fails plus the same number of unchecked Claude-passes, in random order
+    if "check_keys" not in st.session_state:  # pick the list ONCE per session, so it doesn't shrink after each click
+        fails = [i for i in todo if get(renders.iloc[i], "claude_label") == "0"][:ARGS.fail_check]
+        passes = [i for i in todo if get(renders.iloc[i], "claude_label") == "1"][:len(fails)]
+        st.session_state.check_keys = [(renders.iloc[i]["sketch_id"], renders.iloc[i]["round"])
+                                       for i in sorted(fails + passes)]
+    keys = st.session_state.check_keys
+    renders = renders.set_index(["sketch_id", "round"]).loc[keys].reset_index()
+    todo = [i for i, r in renders.iterrows() if not get(r, "human_label")]
+if len(renders) == 0:
+    st.success("Nothing left to check.")
+    st.stop()
 
 if "i" not in st.session_state:
     st.session_state.i = todo[0] if todo else 0
+st.session_state.i = min(st.session_state.i, len(renders) - 1)  # never point past the end of the list
 
 
 def label_and_next(value):
@@ -95,10 +111,14 @@ if "just_did" in st.session_state:
 
 with st.sidebar:
     checked = lab[(lab["human_label"].isin(["0", "1"])) & (lab["claude_label"].isin(["0", "1"]))]
-    st.metric("Checked by you", f"{(lab['human_label'] != '').sum()} / {len(renders)}")
-    st.progress((lab["human_label"] != "").sum() / max(len(renders), 1))
+    done_here = sum(bool(get(r, "human_label")) for _, r in renders.iterrows())  # in this session's list
+    st.metric("Checked by you", f"{done_here} / {len(renders)}")
+    st.progress(done_here / max(len(renders), 1))
     if len(checked):
         agree = (checked["human_label"] == checked["claude_label"]).mean()
+        fails = checked[checked["claude_label"] == "0"]
+        if len(fails):
+            st.caption(f"on Claude's FAIL labels: {(fails['human_label'] == '0').mean():.0%} agree ({len(fails)} checked)")
         st.metric("Agreement with Claude", f"{agree:.0%}", help=f"on {len(checked)} renders both labelled pass/fail")
     with st.expander("Labelling rules"):
         st.markdown(RULES.read_text() if RULES.exists() else "LABELLING.md not found")

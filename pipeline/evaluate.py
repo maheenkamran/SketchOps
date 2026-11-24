@@ -1,8 +1,9 @@
 """Stage 7: compare all models, pick the champion and register it in the MLflow Model Registry.
     python -m pipeline.evaluate
-1. Champion = the trained model with the best VALIDATION balanced accuracy (ties: val ROC-AUC). Test is never
-   used to choose, only reported.
-2. Gate: the champion must beat the best baseline on validation, otherwise nothing is registered.
+1. Champion = the trained model with the best cross-validated ("cv") balanced accuracy on train+val (ties: cv
+   ROC-AUC); see train.py. Test is never used to choose, only reported.
+2. Gate: the champion's cv balanced accuracy must beat the best baseline's validation balanced accuracy
+   (baselines only tune one threshold, so val is enough for them), otherwise nothing is registered.
 3. Register it as model "sketchops-scorer", point the alias "champion" at the new version, and store its
    threshold and metrics as version tags (the serving code in D2 loads models:/sketchops-scorer@champion).
 4. Sanity check: load the model back from the registry and confirm it gives the same test result.
@@ -32,17 +33,23 @@ def comparison(trained, baselines):
     for kind, res in (("baseline", baselines), ("trained", trained)):
         for name, r in res.items():
             row = dict(model=name, type=kind, threshold=r["threshold"])
-            for split in ("val", "test"):
-                row[f"{split}_bal_acc"] = r[split]["balanced_accuracy"]
-                row[f"{split}_auc"] = r[split]["roc_auc"]
+            row["select_bal_acc"] = sel(r)["balanced_accuracy"]  # cv for trained models, val for baselines
+            row["select_auc"] = sel(r)["roc_auc"]
+            row["test_bal_acc"] = r["test"]["balanced_accuracy"]
+            row["test_auc"] = r["test"]["roc_auc"]
             for k in sorted(x for x in r if x.startswith("test/")):
                 row[f"{k.replace('/', '_')}_acc"] = r[k]["accuracy"]
             rows.append(row)
     return pd.DataFrame(rows)
 
 
+def sel(r):
+    """The metrics used for choosing: cross-validation for trained models, the val split for baselines."""
+    return r["cv"] if "cv" in r else r["val"]
+
+
 def pick_champion(trained):
-    return max(trained, key=lambda n: (trained[n]["val"]["balanced_accuracy"], trained[n]["val"]["roc_auc"]))
+    return max(trained, key=lambda n: (sel(trained[n])["balanced_accuracy"], sel(trained[n])["roc_auc"]))
 
 
 def main():
@@ -53,19 +60,19 @@ def main():
 
     name = pick_champion(trained)
     champ = trained[name]
-    best_base = max(baselines, key=lambda n: baselines[n]["val"]["balanced_accuracy"])
-    gain = champ["val"]["balanced_accuracy"] - baselines[best_base]["val"]["balanced_accuracy"]
+    best_base = max(baselines, key=lambda n: sel(baselines[n])["balanced_accuracy"])
+    gain = sel(champ)["balanced_accuracy"] - sel(baselines[best_base])["balanced_accuracy"]
     passed = gain > MIN_GAIN
-    print(f"\nchampion: {name} (val bal_acc {champ['val']['balanced_accuracy']:.3f}), "
+    print(f"\nchampion: {name} (cv bal_acc {sel(champ)['balanced_accuracy']:.3f}), "
           f"best baseline: {best_base} -> gain {gain:+.3f} -> {'REGISTER' if passed else 'NOT registered'}")
 
     mlflow = setup_mlflow(train.EXPERIMENT)
     out = dict(champion=name, gate_passed=bool(passed), gain_over_baseline=round(gain, 4),
-               best_baseline=best_base, champion_val=champ["val"], champion_test=champ["test"])
+               best_baseline=best_base, champion_cv=sel(champ), champion_test=champ["test"])
     with mlflow.start_run(run_name="evaluate"):
         mlflow.set_tags(dict(model_type="evaluation", git_commit=git_commit(), champion=name))
         mlflow.log_params(dict(champion=name, best_baseline=best_base, gate_passed=passed))
-        mlflow.log_metrics(dict(gain_over_baseline=gain, champion_val_bal_acc=champ["val"]["balanced_accuracy"],
+        mlflow.log_metrics(dict(gain_over_baseline=gain, champion_cv_bal_acc=sel(champ)["balanced_accuracy"],
                                 champion_test_bal_acc=champ["test"]["balanced_accuracy"]))
         mlflow.log_table(table, "comparison.json")
 
@@ -87,7 +94,7 @@ def register(mlflow, name, champ):
     tags = dict(model=name, threshold=champ["threshold"], uses_embeddings=champ["uses_embeddings"],
                 train_run_id=champ["run_id"], git_commit=git_commit(),
                 features_md5=file_md5(train.DATA / "features.csv"),
-                val_bal_acc=champ["val"]["balanced_accuracy"], test_bal_acc=champ["test"]["balanced_accuracy"])
+                cv_bal_acc=sel(champ)["balanced_accuracy"], test_bal_acc=champ["test"]["balanced_accuracy"])
     for k, v in tags.items():
         client.set_model_version_tag(REGISTERED_NAME, mv.version, k, str(v))
     client.update_model_version(REGISTERED_NAME, mv.version, description=(

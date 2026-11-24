@@ -3,7 +3,10 @@
   logreg   logistic regression on the 6 features            (simple, easy to explain)
   xgboost  gradient-boosted trees on the 6 features         (catches non-linear combinations)
   mlp      2-layer neural network on the 6 features + SigLIP embeddings of both images
-Every model is fitted on TRAIN only. Its pass/fail threshold is tuned on VAL. Test is only reported.
+Model choice uses 5-fold cross-validation on TRAIN+VAL, grouped by webpage (no page in two folds) and stratified
+(every fold gets some fails): each pair is scored by a model that never saw its webpage ("out-of-fold"), the
+pass/fail threshold is tuned on those scores, and the "cv" metrics are what evaluate.py compares. This is steadier
+than the small VAL set alone. The final model is then refitted on all of TRAIN+VAL. Test is only reported.
 Each model is one MLflow run in "sketchops-scorer" (params, metrics, the fitted model itself).
 Writes reports/train.json (run id, threshold and metrics per model), which evaluate.py uses to pick the champion."""
 import json
@@ -16,7 +19,9 @@ import xgboost  # noqa: F401, I001
 import numpy as np
 import pandas as pd
 import yaml
+from sklearn.base import clone
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import StratifiedGroupKFold
 from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -74,11 +79,22 @@ def log_model(mlflow, name, model, example):
         "sklearn.neural_network._stochastic_optimizers.AdamOptimizer"]).model_uri
 
 
+def out_of_fold(model, X, y, groups, folds, seed):
+    """Score every row with a copy of the model trained on the other folds (never on its own webpage)."""
+    oof = np.zeros(len(y))
+    for fit_idx, score_idx in StratifiedGroupKFold(folds, shuffle=True, random_state=seed).split(X, y, groups):
+        m = clone(model).fit(X[fit_idx], y[fit_idx])
+        oof[score_idx] = m.predict_proba(X[score_idx])[:, 1]
+    return oof
+
+
 def main():
     params = yaml.safe_load((config.ROOT / "params.yaml").read_text())["train"]
     df, s_emb, r_emb = load()
-    is_train, is_val = (df["split"] == "train").to_numpy(), (df["split"] == "val").to_numpy()
+    dev = df["split"].isin(["train", "val"]).to_numpy()  # everything except test
     y = df["label"].to_numpy()
+    groups = df["webpage_id"].to_numpy()
+    folds = params["cv_folds"]
     mlflow = setup_mlflow(EXPERIMENT)
     results = {}
 
@@ -86,23 +102,25 @@ def main():
         p = params[name]
         model, with_emb = make_model(name, p, params["seed"])
         X = build_X(df, s_emb, r_emb, with_emb)
-        model.fit(X[is_train], y[is_train])
+        oof = out_of_fold(model, X[dev], y[dev], groups[dev], folds, params["seed"])
+        thr = tune_threshold(y[dev], oof)
+        model.fit(X[dev], y[dev])  # final model on all of train+val
         score = model.predict_proba(X)[:, 1]
-        thr = tune_threshold(y[is_val], score[is_val])
-        m = report(df, score, thr)
-        m["train"] = classify(y[is_train], score[is_train], thr)  # far above val = overfitting
+        m = {k: v for k, v in report(df, score, thr).items() if k != "val"}  # val is now training data
+        m["cv"] = classify(y[dev], oof, thr)
+        m["train"] = classify(y[dev], score[dev], thr)  # far above cv = overfitting
 
         with mlflow.start_run(run_name=f"train_{name}") as run:
             mlflow.set_tags(dict(model_type="trained", git_commit=git_commit()))
             mlflow.log_params(dict(model=name, threshold=round(thr, 4), uses_embeddings=with_emb,
-                                   n_inputs=X.shape[1], n_train=int(is_train.sum()), seed=params["seed"],
+                                   n_inputs=X.shape[1], n_train=int(dev.sum()), cv_folds=folds, seed=params["seed"],
                                    features_md5=file_md5(DATA / "features.csv"), **p))
             mlflow.log_metrics(flat(m))
-            uri = log_model(mlflow, name, model, X[is_train][:2])
+            uri = log_model(mlflow, name, model, X[dev][:2])
         results[name] = dict(run_id=run.info.run_id, model_uri=uri, threshold=round(thr, 4),
                              uses_embeddings=with_emb, **m)
-        t, v = m["test"], m["val"]
-        print(f"{name:8s} val bal_acc={v['balanced_accuracy']:.3f} auc={v['roc_auc']:.3f} | "
+        t, v = m["test"], m["cv"]
+        print(f"{name:8s} cv bal_acc={v['balanced_accuracy']:.3f} auc={v['roc_auc']:.3f} | "
               f"test bal_acc={t['balanced_accuracy']:.3f} auc={t['roc_auc']:.3f} | "
               f"train bal_acc={m['train']['balanced_accuracy']:.3f}")
 

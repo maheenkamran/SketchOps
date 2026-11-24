@@ -111,7 +111,7 @@ def test_train_fits_logs_and_reloads(isolated_mlflow, monkeypatch):
     n = 60
     label = np.tile([0, 1], n // 2)
     df = pd.DataFrame({f: rng.normal(size=n) + label for f in FEATURES})  # features carry the label
-    df = df.assign(pair_id=[f"p{i}" for i in range(n)], kind="reference", label=label,
+    df = df.assign(pair_id=[f"p{i}" for i in range(n)], webpage_id=[str(i // 2) for i in range(n)], kind="reference", label=label,
                    split=np.repeat(["train", "val", "test"], [36, 12, 12]))
     d = isolated_mlflow / "features"
     d.mkdir()
@@ -165,3 +165,29 @@ def test_human_label_overrides_claude_and_agreement_is_counted():
     assert f.loc["b", "label"] == "0" and f.loc["b", "label_source"] == "human"   # human overrides
     assert "d" not in f.index                                                       # human unsure -> dropped
     assert agreement(lab) == dict(n_checked=2, agreement=0.5)                       # b disagrees, c agrees
+
+
+def test_out_of_fold_never_sees_its_own_webpage():
+    import numpy as np
+    from sklearn.dummy import DummyClassifier
+    from pipeline.train import out_of_fold
+
+    class Spy(DummyClassifier):  # column 0 holds the webpage id, so the spy can see which pages it touches
+        log = []
+
+        def fit(self, X, y):
+            self.trained_on = set(X[:, 0])
+            return super().fit(X, y)
+
+        def predict_proba(self, X):
+            Spy.log.append((self.trained_on, set(X[:, 0])))
+            return super().predict_proba(X)
+
+    groups = np.repeat(np.arange(20), 3)  # 20 webpages, 3 pairs each
+    X = groups.reshape(-1, 1).astype(float)
+    y = np.tile([0, 1, 1], 20)
+    oof = out_of_fold(Spy(strategy="prior"), X, y, groups, folds=5, seed=0)
+    assert len(Spy.log) == 5 and oof.shape == (60,)
+    for trained_on, scored in Spy.log:
+        assert scored and not (scored & trained_on)  # a page is never scored by a model that trained on it
+    assert set().union(*(sc for _, sc in Spy.log)) == set(range(20))  # every page scored once

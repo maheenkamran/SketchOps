@@ -161,8 +161,8 @@ stages:
       size: 2356
     - path: pipeline/train.py
       hash: md5
-      md5: 831fd5b0c3ea383eb1093bc2924bc27a
-      size: 5671
+      md5: 4dbdd5f66ce8113d0f3de93a11239bea
+      size: 6793
     params:
       params.yaml:
         train:
@@ -171,6 +171,7 @@ stages:
           - logreg
           - xgboost
           - mlp
+          cv_folds: 5
           logreg:
             C: 1.0
           xgboost:
@@ -184,8 +185,8 @@ stages:
     outs:
     - path: reports/train.json
       hash: md5
-      md5: 41e055aec7a4693478b4155c572376e9
-      size: 4048
+      md5: 9f4eaa53c38c5184e5f186bdaeeacb07
+      size: 4065
   evaluate:
     cmd: python -m pipeline.evaluate
     deps:
@@ -199,18 +200,18 @@ stages:
       size: 184250
     - path: pipeline/evaluate.py
       hash: md5
-      md5: 75a1306929378e4e26bd562272d705e9
-      size: 5921
+      md5: a392bc7db2dc15a94cf4107671a4eca3
+      size: 6312
     - path: reports/baseline.json
       hash: md5
       md5: 3ee166952d0f90d7444e21d32852d1d1
       size: 3033
     - path: reports/train.json
       hash: md5
-      md5: 41e055aec7a4693478b4155c572376e9
-      size: 4048
+      md5: 9f4eaa53c38c5184e5f186bdaeeacb07
+      size: 4065
     outs:
     - path: reports/evaluate.json
       hash: md5
-      md5: c20d863a1ef765bc6503456d8cf4daf3
-      size: 692
+      md5: ff294cb3dd5f11b6aa75dc0807af6bed
+      size: 694
