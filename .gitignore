@@ -16,6 +16,7 @@ eval/results/
 last_screenshot.png
 .hf/
 sandbox/vendor/
+docker_results/
 
 # D2 (Maheen) - kept out of git until D2 starts
 app/
@@ -25,4 +26,3 @@ ops/langfuse/
 ops/tracing.py
 eval/gate.py
 tests/test_d2.py
-docker_results/
