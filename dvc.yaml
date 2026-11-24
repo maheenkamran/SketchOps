@@ -1,19 +1,16 @@
-# The D1 pipeline. Run everything with:  dvc pull && dvc repro
-# DVC re-runs a stage only when one of its deps changed.
 stages:
   validate:
     cmd: python -m pipeline.validate
     deps:
       - pipeline/validate.py
       - data/raw/sketch2code
-      # - data/raw/own        # add when our own photos are in
     outs:
       - data/validated/manifest.csv
     metrics:
       - reports/validate.json:
-          cache: false        # small file, kept in Git so the report shows in commits and on DagsHub
+          cache: false
 
-  split:                      # by WEBPAGE, so no page is in two splits
+  split:
     cmd: python -m pipeline.split
     deps:
       - pipeline/split.py
@@ -32,8 +29,6 @@ stages:
       - pipeline/make_pairs.py
       - data/validated/manifest.csv
       - data/split/webpages.csv
-      # - data/renders          # add both once the renders are dvc-added and labelled
-      # - data/labels/render_labels.csv
     params:
       - pairs
     outs:
@@ -55,7 +50,7 @@ stages:
       - data/features/features.csv
       - data/features/embeddings.npz
 
-  baseline:                   # also logs one MLflow run per baseline (experiment "sketchops-scorer")
+  baseline:
     cmd: python -m pipeline.baseline
     deps:
       - pipeline/baseline.py
@@ -65,7 +60,7 @@ stages:
       - reports/baseline.json:
           cache: false
 
-  train:                      # one MLflow run per model, with the fitted model saved in the run
+  train:
     cmd: python -m pipeline.train
     deps:
       - pipeline/train.py
@@ -78,13 +73,13 @@ stages:
       - reports/train.json:
           cache: false
 
-  evaluate:                   # picks the champion on val, gates it against the baselines, registers it in MLflow
+  evaluate:
     cmd: python -m pipeline.evaluate
     deps:
       - pipeline/evaluate.py
       - reports/train.json
       - reports/baseline.json
-      - data/features/features.csv     # used to re-check the registered model
+      - data/features/features.csv
       - data/features/embeddings.npz
     metrics:
       - reports/evaluate.json:

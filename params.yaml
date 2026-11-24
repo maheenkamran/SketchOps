@@ -1,25 +1,24 @@
-# Settings for the dvc.yaml stages. Changing a value here re-runs only the stages that use it.
 split:
   seed: 42
-  val: 0.15        # share of Sketch2Code webpages; our own photos always go to test
+  val: 0.15
   test: 0.15
 pairs:
   seed: 42
-  mismatches_per_sketch: 1   # wrong-page screenshots per sketch (label 0)
+  mismatches_per_sketch: 1
 train:
   seed: 42
   models: [logreg, xgboost, mlp]
   logreg:
-    C: 1.0               # smaller = simpler model
+    C: 1.0
   xgboost:
     n_estimators: 200
     max_depth: 3
     learning_rate: 0.05
     subsample: 0.8
-  mlp:                   # 2-layer neural network on SigLIP embeddings + the 6 features
+  mlp:
     hidden: 64
-    alpha: 0.01          # weight decay against overfitting (small dataset)
+    alpha: 0.01
 featurize:
-  side: 256        # images are shrunk to this width for SSIM / edge features
-  bins: 64         # length of the row and column edge profiles
-  grid: 16         # edge-density grid is grid x grid cells
+  side: 256
+  bins: 64
+  grid: 16
